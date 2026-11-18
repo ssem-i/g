@@ -13,5 +13,9 @@ Next.js(App Router) + LiveKit Cloud(WebRTC) + Supabase(Auth/Postgres/Realtime/St
 | 환경 변수 | 이름만 있는 `.env.example`, 키 없이 빌드 통과 | `.env.example`, `src/lib/env.ts` | `npm run build` |
 | 회원가입/로그인/로그아웃 | Supabase Auth 이메일+비밀번호, 가입 시 닉네임을 user metadata로 전달 → 트리거가 profiles 생성 | `src/components/AuthForm.tsx`, `src/components/LogoutButton.tsx`, `schema.sql`의 `handle_new_user` | `/signup`에서 가입 → 헤더에 닉네임 표시 |
 | 테스트 계정 버튼 | 로그인 화면에 스트리머/시청자 버튼 2개 | `src/components/AuthForm.tsx`, `src/lib/test-accounts.ts` | `/login` → "스트리머로 로그인" |
+| 방송 등록 | 제목/설명/카테고리, 로그인 필요, owner_id는 서버가 세션 사용자로 강제 | `src/app/api/streams/route.ts`, `src/components/StreamForm.tsx`, `src/app/studio/new/page.tsx` | 스튜디오 → "+ 새 방송" |
+| 방송 목록/상세 | 메인에서 라이브 우선 정렬 + LIVE 배지, 상세 페이지 | `src/app/page.tsx`, `src/components/StreamCard.tsx`, `src/app/streams/[id]/page.tsx` | 메인 화면 |
+| 방송 수정/삭제 (소유자만) | API에서 세션 검증 후 비소유자 403, DB RLS로 이중 차단, UI는 소유자에게만 버튼 표시, 수정 URL 직접 접근 시 "접근 권한이 없습니다" | `src/lib/server/api.ts`(`requireStreamOwner`), `src/app/api/streams/[id]/route.ts`, `src/app/studio/[id]/edit/page.tsx`, `schema.sql` RLS | 시청자 계정으로 `/studio/<스트리머 방송 id>/edit` 접속 → 차단 |
+| 스튜디오 | 내 방송 목록, 송출/수정/삭제 | `src/app/studio/page.tsx` | 헤더 "스튜디오" |
 
 (작업 진행에 따라 갱신됩니다)
