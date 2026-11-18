@@ -87,6 +87,8 @@ export function Broadcaster({ stream, onLiveStart, onLiveEnd }: BroadcasterProps
   const videoElRef = useRef<HTMLVideoElement | null>(null);
   const stopHeartbeatRef = useRef<(() => void) | null>(null);
   const liveRef = useRef(false);
+  const mountedRef = useRef(true);
+  const pendingFacingRef = useRef<Facing | null>(null);
   const endingRef = useRef(false);
   const modeRef = useRef<Mode>("screen");
   const [previewVersion, setPreviewVersion] = useState(0);
@@ -245,7 +247,10 @@ export function Broadcaster({ stream, onLiveStart, onLiveEnd }: BroadcasterProps
       });
       micRef.current = track;
       track.on(TrackEvent.Ended, () => {
+        if (micRef.current !== track) return;
         micRef.current = null;
+        // LiveKit 이 자동 재시작해 publish 상태로 남지 않도록 직접 내리고 장치를 해제
+        void unpublishIfLive(track).finally(() => track.stop());
         setMic("off");
         setWarning("마이크 연결이 끊겼습니다. 장치를 확인한 뒤 '마이크' 버튼을 다시 누르세요.");
       });
@@ -277,7 +282,9 @@ export function Broadcaster({ stream, onLiveStart, onLiveEnd }: BroadcasterProps
       const track = await createLocalVideoTrack({ facingMode: face, resolution: CAMERA_RESOLUTION });
       cameraRef.current = track;
       track.on(TrackEvent.Ended, () => {
+        if (cameraRef.current !== track) return;
         cameraRef.current = null;
+        void unpublishIfLive(track).finally(() => track.stop());
         setCamera("off");
         bumpPreview();
         setWarning("카메라 연결이 끊겼습니다. 다른 앱이 카메라를 쓰고 있지 않은지 확인한 뒤 다시 켜세요.");
@@ -295,15 +302,29 @@ export function Broadcaster({ stream, onLiveStart, onLiveEnd }: BroadcasterProps
   const toggleCamera = async () => {
     const c = cameraRef.current;
     if (!c) return startCamera();
-    if (c.isMuted) await c.unmute();
-    else await c.mute();
+    if (c.isMuted) {
+      await c.unmute();
+      // 일시정지 중에 전환을 눌렀다면 다시 켤 때 적용
+      if (pendingFacingRef.current) {
+        const face = pendingFacingRef.current;
+        pendingFacingRef.current = null;
+        try {
+          await c.restartTrack({ facingMode: face, resolution: CAMERA_RESOLUTION });
+          bumpPreview();
+        } catch (e) {
+          setError(mediaErrorMessage(e, "camera"));
+        }
+      }
+    } else await c.mute();
     setCamera(stateOf(c));
   };
 
   const flipCamera = async () => {
     const next: Facing = facing === "user" ? "environment" : "user";
     const c = cameraRef.current;
-    if (!c) {
+    if (!c || c.isMuted) {
+      // 카메라가 꺼져 있으면 장치를 켜지 않고 다음에 켤 때 적용한다
+      if (c) pendingFacingRef.current = next;
       setFacing(next);
       return;
     }
@@ -391,20 +412,26 @@ export function Broadcaster({ stream, onLiveStart, onLiveEnd }: BroadcasterProps
     [onLiveEnd, sendStatus],
   );
 
-  const goLive = async () => {
-    setError(null);
-    setWarning(null);
-    setInfo(null);
-    const video = mode === "screen" ? screenVideoRef.current : cameraRef.current;
+  /** 지금 켜져 있는 트랙 목록 (연결 직후 시점의 ref 기준으로 다시 계산한다) */
+  const currentTracks = (): Array<[LocalTrack, TrackPublishOptions]> => {
+    const m = modeRef.current;
     const tracks: Array<[LocalTrack, TrackPublishOptions]> = [];
-    if (video) tracks.push([video, { source: mode === "screen" ? Track.Source.ScreenShare : Track.Source.Camera }]);
-    if (mode === "screen" && screenAudioRef.current)
+    const video = m === "screen" ? screenVideoRef.current : cameraRef.current;
+    if (video) tracks.push([video, { source: m === "screen" ? Track.Source.ScreenShare : Track.Source.Camera }]);
+    if (m === "screen" && screenAudioRef.current)
       tracks.push([
         screenAudioRef.current,
         { source: Track.Source.ScreenShareAudio, audioPreset: AudioPresets.musicHighQualityStereo, dtx: false, red: false },
       ]);
     if (micRef.current) tracks.push([micRef.current, { source: Track.Source.Microphone }]);
-    if (tracks.length === 0) {
+    return tracks;
+  };
+
+  const goLive = async () => {
+    setError(null);
+    setWarning(null);
+    setInfo(null);
+    if (currentTracks().length === 0) {
       setError(
         mode === "screen"
           ? "송출할 화면이나 마이크가 없습니다. '화면 공유' 또는 '마이크'를 먼저 켜세요."
@@ -442,16 +469,24 @@ export function Broadcaster({ stream, onLiveStart, onLiveEnd }: BroadcasterProps
               ? "다른 탭이나 기기에서 같은 방송을 송출하기 시작해 이 화면의 송출이 종료되었습니다."
               : "방송 서버와 연결이 끊겼습니다. 네트워크를 확인한 뒤 '방송 시작'을 다시 누르세요.",
           );
-          void finishLive({ notifyServer: true });
+          // 다른 탭이 같은 방송을 이어받은 경우 end 를 보내면 새 방송을 offline 으로 만들어 버린다
+          void finishLive({ notifyServer: reason !== DisconnectReason.DUPLICATE_IDENTITY });
         });
 
+      if (!mountedRef.current) return;
       await r.connect(body.url, body.token);
+      // 4. 연결 중에 페이지를 떠났다면 여기서 중단 (cleanup 이 이미 실행됨)
+      if (!mountedRef.current) {
+        await r.disconnect(true);
+        return;
+      }
       roomRef.current = r;
       liveRef.current = true;
-      for (const [t, opts] of tracks) await r.localParticipant.publishTrack(t, opts);
+      for (const [t, opts] of currentTracks()) await r.localParticipant.publishTrack(t, opts);
       updateCount();
 
       const statusRes = await sendStatus("start");
+      if (!mountedRef.current) return;
       if (!statusRes.ok) {
         const sb = (await statusRes.json().catch(() => ({}))) as { error?: string };
         throw new Error(sb.error ?? "방송 상태를 live 로 바꾸지 못했습니다.");
@@ -507,7 +542,9 @@ export function Broadcaster({ stream, onLiveStart, onLiveEnd }: BroadcasterProps
   // 컴포넌트가 사라질 때(다른 페이지로 이동) 송출 종료 + 장치 해제
   useEffect(() => {
     const refs = { screenVideoRef, screenAudioRef, micRef, cameraRef };
+    mountedRef.current = true;
     return () => {
+      mountedRef.current = false;
       stopHeartbeatRef.current?.();
       if (liveRef.current) {
         liveRef.current = false;
@@ -623,7 +660,8 @@ export function Broadcaster({ stream, onLiveStart, onLiveEnd }: BroadcasterProps
           </p>
         )}
 
-        <div className="space-y-2">
+        {/* 연결/종료 처리 중에는 트랙 조작을 잠가 publish 목록과 어긋나지 않게 한다 */}
+        <fieldset className="space-y-2 disabled:opacity-60" disabled={phase === "connecting" || phase === "ending"}>
           {mode === "screen" ? (
             <>
               <ControlButton
@@ -666,7 +704,7 @@ export function Broadcaster({ stream, onLiveStart, onLiveEnd }: BroadcasterProps
             </>
           )}
           <ControlButton icon="🎤" label="마이크" state={mic} busy={busy === "mic"} onClick={toggleMic} />
-        </div>
+        </fieldset>
 
         {mode === "screen" && (
           <Notice tone="info" title="소리 공유 안내">

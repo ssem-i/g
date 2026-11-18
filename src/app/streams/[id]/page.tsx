@@ -54,7 +54,7 @@ export default async function StreamPage({ params }: PageProps<"/streams/[id]">)
   const live = isEffectivelyLive(stream);
 
   return (
-    <WatchRoom stream={stream} viewer={viewer}>
+    <WatchRoom stream={stream} serverLive={live} viewer={viewer}>
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           {live && <LiveBadge />}

@@ -8,12 +8,13 @@ import type { Stream } from "@/lib/types";
 
 interface Props {
   stream: Pick<Stream, "id" | "owner_id" | "status" | "last_seen_at">;
+  serverLive: boolean;
   viewer: ChatViewer | null;
   children?: React.ReactNode;
 }
 
 /** 방송 상세: 플레이어 + 후원 알림 오버레이 + 채팅을 묶는 클라이언트 영역 */
-export function WatchRoom({ stream, viewer, children }: Props) {
+export function WatchRoom({ stream, serverLive, viewer, children }: Props) {
   const [queue, setQueue] = useState<DonationEvent[]>([]);
   const seq = useRef(0);
 
@@ -29,6 +30,7 @@ export function WatchRoom({ stream, viewer, children }: Props) {
       <div className="min-w-0 space-y-4">
         <Viewer
           stream={{ id: stream.id, status: stream.status, last_seen_at: stream.last_seen_at }}
+          serverLive={serverLive}
           overlay={<DonationAlert queue={queue} onShown={onShown} />}
         />
         {children}

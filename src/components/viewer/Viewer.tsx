@@ -8,7 +8,7 @@ import {
   Track,
   type RemoteParticipant,
 } from "livekit-client";
-import { HEARTBEAT_STALE_MS, isEffectivelyLive } from "@/lib/live";
+import { HEARTBEAT_STALE_MS } from "@/lib/live";
 import { getBrowserSupabase } from "@/lib/supabase/client";
 import type { Stream } from "@/lib/types";
 
@@ -16,6 +16,8 @@ type Conn = "idle" | "connecting" | "connected" | "error";
 
 interface Props {
   stream: Pick<Stream, "id" | "status" | "last_seen_at">;
+  /** 서버 시계로 판단한 최초 라이브 여부 (기기 시계 오차에 영향받지 않도록) */
+  serverLive: boolean;
   /** 플레이어 위에 겹쳐 보여줄 요소 (후원 알림 등) */
   overlay?: ReactNode;
   onViewerCount?: (n: number) => void;
@@ -23,11 +25,14 @@ interface Props {
 
 const isHost = (p: RemoteParticipant) => p.identity.startsWith("host-");
 
-export function Viewer({ stream, overlay, onViewerCount }: Props) {
+export function Viewer({ stream, serverLive, overlay, onViewerCount }: Props) {
   // ---- 방송 상태 (DB status + 하트비트) ----
+  // 기기 시계가 서버와 달라도 동작하도록, last_seen_at 값을 서버 시각과 비교하지 않고
+  // "새 하트비트 값을 마지막으로 관측한 로컬 시각(freshAt)"으로 만료를 판단한다.
   const [row, setRow] = useState(stream);
   const [clock, setClock] = useState(() => Date.now());
-  const live = isEffectivelyLive(row, clock);
+  const [freshAt, setFreshAt] = useState(() => (serverLive ? Date.now() : 0));
+  const live = row.status === "live" && Boolean(row.last_seen_at) && clock - freshAt < HEARTBEAT_STALE_MS;
 
   // ---- 플레이어 상태 ----
   const [conn, setConn] = useState<Conn>("idle");
@@ -35,7 +40,9 @@ export function Viewer({ stream, overlay, onViewerCount }: Props) {
   const [hasVideo, setHasVideo] = useState(false);
   const [hasAudio, setHasAudio] = useState(false);
   const [hostPresent, setHostPresent] = useState(false);
-  const [needsGesture, setNeedsGesture] = useState(false);
+  const [audioBlocked, setAudioBlocked] = useState(false);
+  const [videoBlocked, setVideoBlocked] = useState(false);
+  const needsGesture = audioBlocked || videoBlocked;
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(1);
   const [viewers, setViewers] = useState(0);
@@ -52,6 +59,13 @@ export function Viewer({ stream, overlay, onViewerCount }: Props) {
   // 방송 상태 실시간 반영 (Supabase Realtime) + 주기적 재조회 (하트비트 만료 감지)
   useEffect(() => {
     const supabase = getBrowserSupabase();
+    let lastSeen = stream.last_seen_at;
+    const accept = (n: Props["stream"]) => {
+      if (n.status === "live" && n.last_seen_at && n.last_seen_at !== lastSeen) setFreshAt(Date.now());
+      lastSeen = n.last_seen_at;
+      setRow({ id: n.id, status: n.status, last_seen_at: n.last_seen_at });
+      setClock(Date.now());
+    };
     const refetch = async () => {
       if (!supabase) return;
       const { data } = await supabase
@@ -59,7 +73,7 @@ export function Viewer({ stream, overlay, onViewerCount }: Props) {
         .select("id, status, last_seen_at")
         .eq("id", stream.id)
         .maybeSingle();
-      if (data) setRow(data as Props["stream"]);
+      if (data) accept(data as Props["stream"]);
     };
     const channel = supabase
       ?.channel(`stream-status-${stream.id}`)
@@ -67,9 +81,7 @@ export function Viewer({ stream, overlay, onViewerCount }: Props) {
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "streams", filter: `id=eq.${stream.id}` },
         (payload) => {
-          const n = payload.new as Props["stream"];
-          setRow({ id: n.id, status: n.status, last_seen_at: n.last_seen_at });
-          setClock(Date.now());
+          accept(payload.new as Props["stream"]);
         },
       )
       .subscribe();
@@ -81,7 +93,7 @@ export function Viewer({ stream, overlay, onViewerCount }: Props) {
       window.clearInterval(tick);
       if (channel) void supabase?.removeChannel(channel);
     };
-  }, [stream.id]);
+  }, [stream.id, stream.last_seen_at]);
 
   const updateViewers = useCallback(
     (room: Room) => {
@@ -120,7 +132,13 @@ export function Viewer({ stream, overlay, onViewerCount }: Props) {
     if (chosen) {
       chosen.attach(el);
       setHasVideo(true);
-      el.play().catch(() => setNeedsGesture(true));
+      el.play()
+        .then(() => setVideoBlocked(false))
+        .catch((e: unknown) => {
+          // 트랙을 빠르게 바꿀 때 나는 AbortError 는 차단이 아니다
+          if (e instanceof Error && e.name === "AbortError") return;
+          setVideoBlocked(true);
+        });
     } else {
       el.srcObject = null;
       setHasVideo(false);
@@ -170,7 +188,8 @@ export function Viewer({ stream, overlay, onViewerCount }: Props) {
         updateViewers(room);
         pickVideo(room);
       })
-      .on(RoomEvent.AudioPlaybackStatusChanged, () => setNeedsGesture(!room.canPlaybackAudio))
+      .on(RoomEvent.AudioPlaybackStatusChanged, () => setAudioBlocked(!room.canPlaybackAudio))
+      .on(RoomEvent.VideoPlaybackStatusChanged, () => setVideoBlocked(!room.canPlaybackVideo))
       .on(RoomEvent.Reconnecting, () => setReconnecting(true))
       .on(RoomEvent.Reconnected, () => setReconnecting(false))
       .on(RoomEvent.Disconnected, () => {
@@ -200,7 +219,7 @@ export function Viewer({ stream, overlay, onViewerCount }: Props) {
         updateViewers(room);
         pickVideo(room);
         refreshAudio();
-        if (!room.canPlaybackAudio) setNeedsGesture(true);
+        if (!room.canPlaybackAudio) setAudioBlocked(true);
       } catch (e) {
         if (cancelled) return;
         setConn("error");
@@ -230,20 +249,28 @@ export function Viewer({ stream, overlay, onViewerCount }: Props) {
   // ---- 사용자 조작 ----
   const startPlayback = async () => {
     const room = roomRef.current;
+    // 사용자 터치 안에서 소리와 영상 재생을 모두 시작한다
     try {
       await room?.startAudio();
     } catch {
-      // 무시: 아래 play 로 재시도
+      // 아래에서 상태로 판단
     }
     try {
-      await videoRef.current?.play();
+      await room?.startVideo();
     } catch {
-      // iOS 저전력 모드 등
+      // 아래 play 로 재시도
+    }
+    let videoOk = true;
+    try {
+      if (videoRef.current?.srcObject) await videoRef.current.play();
+    } catch (e) {
+      videoOk = e instanceof Error && e.name === "AbortError";
     }
     mutedRef.current = false;
     setMuted(false);
     applyAudioSettings();
-    setNeedsGesture(Boolean(room && !room.canPlaybackAudio));
+    setAudioBlocked(Boolean(room && !room.canPlaybackAudio));
+    setVideoBlocked(!videoOk);
   };
 
   const toggleMute = async () => {
