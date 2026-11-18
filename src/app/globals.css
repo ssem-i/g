@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0e0f12;
+  --surface: #17181c;
+  --surface-2: #202227;
+  --border: #2c2e34;
+  --foreground: #eceef2;
+  --muted: #9a9ea8;
+  --accent: #00e19e;
+  --accent-ink: #04140e;
+  --danger: #ff5c5c;
+  --live: #ff3b3b;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-danger: var(--danger);
+  --color-live: var(--live);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family:
+    "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic",
+    system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
+}
+@utility btn-primary {
+  @apply btn bg-accent text-accent-ink hover:brightness-110;
+}
+@utility btn-secondary {
+  @apply btn border border-border bg-surface-2 text-foreground hover:bg-border;
+}
+@utility btn-danger {
+  @apply btn bg-danger text-white hover:brightness-110;
+}
+@utility input {
+  @apply w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-foreground placeholder:text-muted outline-none focus:border-accent;
+}
+@utility card {
+  @apply rounded-xl border border-border bg-surface;
+}
