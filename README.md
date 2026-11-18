@@ -11,5 +11,7 @@ Next.js(App Router) + LiveKit Cloud(WebRTC) + Supabase(Auth/Postgres/Realtime/St
 |---|---|---|---|
 | 데이터 모델 / RLS | 5개 테이블, 전 테이블 RLS, donate() 함수, Storage 버킷, 테스트 계정 시드 | `supabase/schema.sql` | SQL Editor에서 실행 |
 | 환경 변수 | 이름만 있는 `.env.example`, 키 없이 빌드 통과 | `.env.example`, `src/lib/env.ts` | `npm run build` |
+| 회원가입/로그인/로그아웃 | Supabase Auth 이메일+비밀번호, 가입 시 닉네임을 user metadata로 전달 → 트리거가 profiles 생성 | `src/components/AuthForm.tsx`, `src/components/LogoutButton.tsx`, `schema.sql`의 `handle_new_user` | `/signup`에서 가입 → 헤더에 닉네임 표시 |
+| 테스트 계정 버튼 | 로그인 화면에 스트리머/시청자 버튼 2개 | `src/components/AuthForm.tsx`, `src/lib/test-accounts.ts` | `/login` → "스트리머로 로그인" |
 
 (작업 진행에 따라 갱신됩니다)
