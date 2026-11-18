@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ConfigMissing } from "@/components/ConfigMissing";
+import { Viewer } from "@/components/viewer/Viewer";
 import { NotFoundCard } from "@/components/Forbidden";
 import { Notice } from "@/components/Notice";
 import { OwnerActions } from "@/components/OwnerActions";
@@ -37,9 +38,7 @@ export default async function StreamPage({ params }: PageProps<"/streams/[id]">)
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
       <div className="min-w-0 space-y-4">
-        <div className="flex aspect-video items-center justify-center rounded-xl bg-black text-muted">
-          {live ? "방송 중" : "방송 준비 중"}
-        </div>
+        <Viewer stream={{ id: stream.id, status: stream.status, last_seen_at: stream.last_seen_at }} />
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             {live && <LiveBadge />}

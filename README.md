@@ -21,5 +21,6 @@ Next.js(App Router) + LiveKit Cloud(WebRTC) + Supabase(Auth/Postgres/Realtime/St
 | 방송 상태 live/offline | 송출 시작 시 live, 종료 시 offline. 탭 닫기 시 `sendBeacon`, 20초 하트비트가 75초 이상 끊기면 offline으로 간주, LiveKit 웹훅(선택)으로 즉시 offline | `src/app/api/streams/[id]/status/route.ts`, `src/lib/live.ts`, `src/app/api/livekit/webhook/route.ts` | 송출 중 탭 닫기 → 메인에서 LIVE 배지 사라짐 |
 | PC 송출 | 화면 공유 + 탭/시스템 오디오 + 마이크, 각각 켜기/끄기와 상태 표시, 송출 전 미리보기, 탭 오디오 안내 문구 | `src/components/broadcast/Broadcaster.tsx` | 스튜디오 → 송출 시작 |
 | 모바일 송출 | 기기 감지 후 카메라 모드, 전/후면 전환, 마이크 켜기/끄기, 화면 공유 미지원 시 버튼 숨김, `playsInline` | `src/components/broadcast/Broadcaster.tsx`, `src/lib/device.ts` | 휴대폰으로 송출 페이지 접속 |
+| 실시간 시청 | 로그인 없이 구독 전용 토큰으로 시청, 반응형 16:9 플레이어, 전체 화면(iPhone은 비디오 전체 화면), 음소거/해제와 볼륨, 자동 재생 차단 시 "눌러서 시청 시작" 오버레이, 현재 시청자 수, 꺼진 방송은 "방송 준비 중"(Realtime으로 상태 자동 반영) | `src/components/viewer/Viewer.tsx`, `src/app/streams/[id]/page.tsx` | 로그아웃 상태로 방송 상세 페이지 접속 |
 
 (작업 진행에 따라 갱신됩니다)
