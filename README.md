@@ -68,6 +68,7 @@ PC에서는 화면·탭 소리·마이크를, 모바일에서는 카메라·마�
 | PC 송출 | 화면 공유 + 탭/시스템 오디오 + 마이크, 각각 켜기/끄기와 상태 표시, 송출 전 미리보기, 탭 오디오 안내 문구 | `src/components/broadcast/Broadcaster.tsx` | 스튜디오 → 송출 시작 |
 | 모바일 송출 | 기기 감지 후 카메라 모드, 전/후면 전환, 마이크 켜기/끄기, 화면 공유 미지원 시 버튼 숨김, `playsInline` | `src/components/broadcast/Broadcaster.tsx`, `src/lib/device.ts` | 휴대폰으로 송출 페이지 접속 |
 | 실시간 시청 | 로그인 없이 구독 전용 토큰으로 시청, 반응형 16:9 플레이어, 전체 화면(iPhone은 비디오 전체 화면), 음소거/해제와 볼륨, 자동 재생 차단 시 "눌러서 시청 시작" 오버레이, 현재 시청자 수, 꺼진 방송은 "방송 준비 중"(Realtime으로 상태 자동 반영) | `src/components/viewer/Viewer.tsx`, `src/app/streams/[id]/page.tsx` | 로그아웃 상태로 방송 상세 페이지 접속 |
+| (선택) 실시간 채팅 | 로그인 사용자만 작성(RLS `user_id = auth.uid()`), 누구나 열람, Supabase Realtime INSERT/DELETE 구독, DB 저장, 방송 소유자는 모든 채팅 삭제(RLS), 스트리머 배지 | `src/components/chat/ChatPanel.tsx`, `schema.sql` chat_messages 정책 | 두 창에서 같은 방송 열고 채팅 |
 
 
 ## 4. 권장 환경과 알려진 제약
