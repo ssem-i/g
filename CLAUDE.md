@@ -83,10 +83,10 @@
 - [x] 스튜디오 후원 내역
 
 ## 4.3 녹화/다시보기 (선택)
-- [ ] MediaRecorder로 송출 스트림 녹화
-- [ ] 종료 시 Storage 업로드 + recordings 기록
-- [ ] 방송 상세/채널 페이지 다시보기 목록, 재생 페이지
-- [ ] 소유자 다시보기 삭제
+- [x] MediaRecorder로 송출 스트림 녹화 (Playwright 가짜 장치로 녹화·트랙 교체·WebM 길이 보정 검증)
+- [x] 종료 시 Storage 업로드 + recordings 기록
+- [x] 방송 상세/채널 페이지 다시보기 목록, 재생 페이지
+- [x] 소유자 다시보기 삭제
 
 ## 5. 데이터 모델
 - [x] profiles, streams, chat_messages, donations, recordings
@@ -118,5 +118,5 @@
 - [x] 7. README 초안
 - [x] 8. 댓글
 - [x] 9. 도네이션
-- [ ] 10. 녹화와 다시보기
+- [x] 10. 녹화와 다시보기
 - [ ] 11. 전체 재검증, README 완성

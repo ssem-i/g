@@ -2,6 +2,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ConfigMissing } from "@/components/ConfigMissing";
 import { DonateForm } from "@/components/donation/DonateForm";
+import { RECORDING_SELECT, RecordingList } from "@/components/recording/RecordingList";
+import type { Recording } from "@/lib/types";
 import { WatchRoom } from "@/components/viewer/WatchRoom";
 import type { ChatViewer } from "@/components/chat/ChatPanel";
 import { NotFoundCard } from "@/components/Forbidden";
@@ -42,6 +44,13 @@ export default async function StreamPage({ params }: PageProps<"/streams/[id]">)
   if (!stream) return <NotFoundCard />;
 
   const isOwner = user?.id === stream.owner_id;
+  const { data: recordings } = await supabase
+    .from("recordings")
+    .select(RECORDING_SELECT)
+    .eq("stream_id", stream.id)
+    .order("created_at", { ascending: false })
+    .limit(30)
+    .returns<Recording[]>();
   const live = isEffectivelyLive(stream);
 
   return (
@@ -59,6 +68,10 @@ export default async function StreamPage({ params }: PageProps<"/streams/[id]">)
         {isOwner && <OwnerActions streamId={stream.id} live={live} />}
       </div>
       <DonateForm streamId={stream.id} loggedIn={Boolean(user)} isOwner={isOwner} initialPoints={points} />
+      <section>
+        <h2 className="mb-3 text-lg font-bold">다시보기</h2>
+        <RecordingList recordings={recordings ?? []} viewerId={user?.id} />
+      </section>
     </WatchRoom>
   );
 }

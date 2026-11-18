@@ -366,11 +366,6 @@ export function Broadcaster({ stream, onLiveStart, onLiveEnd }: BroadcasterProps
       setPhase("ending");
       stopHeartbeat();
       liveRef.current = false;
-      try {
-        await onLiveEnd?.();
-      } catch {
-        // 녹화 업로드 실패는 녹화 모듈이 따로 안내한다
-      }
       const room = roomRef.current;
       roomRef.current = null;
       if (room) await room.disconnect(false); // 로컬 트랙은 유지 → 미리보기 계속
@@ -386,6 +381,12 @@ export function Broadcaster({ stream, onLiveStart, onLiveEnd }: BroadcasterProps
       setViewerCount(0);
       setReconnecting(false);
       endingRef.current = false;
+      // 녹화 정지/업로드는 방송 종료 처리 뒤에 진행 (시청자에게는 즉시 종료로 보임)
+      try {
+        await onLiveEnd?.();
+      } catch {
+        // 녹화 업로드 실패는 녹화 모듈이 따로 안내한다
+      }
     },
     [onLiveEnd, sendStatus],
   );

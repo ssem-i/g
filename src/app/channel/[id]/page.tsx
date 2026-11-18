@@ -4,8 +4,9 @@ import { NotFoundCard } from "@/components/Forbidden";
 import { EmptyState } from "@/components/Notice";
 import { StreamGrid } from "@/components/StreamCard";
 import { sortLiveFirst } from "@/lib/server/data";
-import { getServerSupabase } from "@/lib/supabase/server";
-import { STREAM_SELECT, type Profile, type StreamWithOwner } from "@/lib/types";
+import { getCurrentUser, getServerSupabase } from "@/lib/supabase/server";
+import { RECORDING_SELECT, RecordingList } from "@/components/recording/RecordingList";
+import { STREAM_SELECT, type Profile, type Recording, type StreamWithOwner } from "@/lib/types";
 
 export const metadata: Metadata = { title: "채널 — LiveOn" };
 
@@ -15,7 +16,7 @@ export default async function ChannelPage({ params }: PageProps<"/channel/[id]">
   if (!supabase) return <ConfigMissing />;
   if (!/^[0-9a-f-]{36}$/i.test(id)) return <NotFoundCard message="채널을 찾을 수 없습니다." />;
 
-  const [{ data: profile }, { data: streams }] = await Promise.all([
+  const [{ data: profile }, { data: streams }, { data: recordings }, user] = await Promise.all([
     supabase.from("profiles").select("id, nickname, created_at").eq("id", id).maybeSingle<Pick<Profile, "id" | "nickname" | "created_at">>(),
     supabase
       .from("streams")
@@ -23,6 +24,14 @@ export default async function ChannelPage({ params }: PageProps<"/channel/[id]">
       .eq("owner_id", id)
       .order("created_at", { ascending: false })
       .returns<StreamWithOwner[]>(),
+    supabase
+      .from("recordings")
+      .select(RECORDING_SELECT)
+      .eq("owner_id", id)
+      .order("created_at", { ascending: false })
+      .limit(60)
+      .returns<Recording[]>(),
+    getCurrentUser(supabase),
   ]);
   if (!profile) return <NotFoundCard message="채널을 찾을 수 없습니다." />;
 
@@ -44,6 +53,10 @@ export default async function ChannelPage({ params }: PageProps<"/channel/[id]">
         ) : (
           <EmptyState title="아직 방송이 없습니다" />
         )}
+      </section>
+      <section>
+        <h2 className="mb-3 text-lg font-bold">다시보기</h2>
+        <RecordingList recordings={recordings ?? []} viewerId={user?.id} />
       </section>
     </div>
   );

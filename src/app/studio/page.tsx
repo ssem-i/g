@@ -6,7 +6,8 @@ import { LiveBadge } from "@/components/StreamCard";
 import { formatDate, isEffectivelyLive } from "@/lib/live";
 import { requirePageUser } from "@/lib/server/auth";
 import { sortLiveFirst } from "@/lib/server/data";
-import { STREAM_SELECT, type StreamWithOwner } from "@/lib/types";
+import { STREAM_SELECT, type Recording, type StreamWithOwner } from "@/lib/types";
+import { RECORDING_SELECT, RecordingList } from "@/components/recording/RecordingList";
 
 export const metadata = { title: "스튜디오 — LiveOn" };
 
@@ -44,6 +45,13 @@ export default async function StudioPage() {
     .limit(50)
     .returns<ReceivedDonation[]>();
   const donationTotal = (donations ?? []).reduce((sum, d) => sum + d.amount, 0);
+  const { data: myRecordings } = await supabase
+    .from("recordings")
+    .select(RECORDING_SELECT)
+    .eq("owner_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(30)
+    .returns<Recording[]>();
   const { data: me } = await supabase.from("profiles").select("points").eq("id", user.id).maybeSingle();
 
   return (
@@ -145,6 +153,11 @@ export default async function StudioPage() {
             </table>
           </div>
         )}
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-lg font-bold">내 다시보기</h2>
+        <RecordingList recordings={myRecordings ?? []} viewerId={user.id} />
       </section>
     </div>
   );
