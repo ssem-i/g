@@ -37,6 +37,8 @@ body {
     "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic",
     system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   -webkit-tap-highlight-color: transparent;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 @utility btn {
