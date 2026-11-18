@@ -71,6 +71,9 @@ PC에서는 화면·탭 소리·마이크를, 모바일에서는 카메라·마�
 | (선택) 실시간 채팅 | 로그인 사용자만 작성(RLS `user_id = auth.uid()`), 누구나 열람, Supabase Realtime INSERT/DELETE 구독, DB 저장, 방송 소유자는 모든 채팅 삭제(RLS), 스트리머 배지 | `src/components/chat/ChatPanel.tsx`, `schema.sql` chat_messages 정책 | 두 창에서 같은 방송 열고 채팅 |
 | (선택) 도네이션 | 가입 시 10,000P(트리거), 금액·메시지 입력 후원, `donate()` DB 함수가 잔액 확인·차감·스트리머 적립·기록을 한 트랜잭션으로 처리(본인 방송 후원·잔액 부족 거부), Realtime으로 모든 시청자 플레이어 위 알림 + 채팅 강조, 스튜디오 받은 후원 표 | `src/components/donation/*`, `src/components/viewer/WatchRoom.tsx`, `src/app/studio/page.tsx`, `schema.sql` `donate()` | 시청자 계정으로 후원 → 다른 창 플레이어 위 알림 |
 | (선택) 녹화/다시보기 | 스트리머 브라우저에서 MediaRecorder로 녹화(캔버스 합성 영상 + AudioContext로 탭 오디오·마이크 믹스 → 송출 중 화면/카메라 전환에도 끊기지 않음), 방송 종료 시 Storage `recordings/{userId}/…` 업로드 + recordings 행 기록, WebM 길이 보정, 방송 상세·채널·스튜디오에 목록, 재생 페이지, 소유자 삭제(Storage 정책 + RLS) | `src/lib/recorder.ts`, `src/components/broadcast/BroadcastClient.tsx`, `src/components/recording/*`, `src/app/recordings/[id]/page.tsx` | 송출 → 방송 종료 → "다시보기 저장 완료 → 보기" |
+| 모바일 반응형 | 모든 페이지 Tailwind 반응형(목록 1→4열, 상세 플레이어/채팅 세로→가로 배치), 한국어 줄바꿈(`keep-all`) | `src/app/**`, `src/app/globals.css` | 휴대폰으로 각 페이지 접속 |
+| 로딩/빈/오류 상태 | 로딩 스켈레톤, 빈 목록 안내, 오류 경계(다시 시도), 카메라/마이크 권한 거부·장치 없음·사용 중, 네트워크/WebRTC 연결 실패, 환경 변수 누락 안내 | `src/app/loading.tsx`, `src/app/error.tsx`, `src/components/Notice.tsx`, `src/lib/errors.ts` | 카메라 권한 거부 후 "카메라" 버튼 |
+| 한국어 오류 + 해결 방법 | Supabase Auth/DB/미디어 오류를 원인과 해결 방법이 담긴 한국어 문장으로 변환 | `src/lib/errors.ts`, `schema.sql` `donate()` 메시지 | 잘못된 비밀번호로 로그인 |
 
 
 ## 4. 권장 환경과 알려진 제약
@@ -93,7 +96,20 @@ PC에서는 화면·탭 소리·마이크를, 모바일에서는 카메라·마�
 - 회사/학교 네트워크가 WebRTC(UDP)를 막으면 연결이 실패할 수 있습니다(LiveKit Cloud의 TURN/TLS로 대부분 우회).
 - 다시보기 녹화는 스트리머 브라우저에서 진행되므로, 탭을 강제로 닫으면 해당 방송의 녹화는 저장되지 않습니다. Supabase 무료 플랜은 파일당 50MB 제한이 있어 약 10분 분량까지 저장됩니다.
 
-## 5. 로컬 실행 방법
+## 5. 개발 중 검증 내역
+
+| 항목 | 방법 | 결과 |
+|---|---|---|
+| 타입 검사 / 빌드 | `npm run typecheck`, `npm run build` (환경 변수 없이) | 통과 |
+| `schema.sql` 재실행 안전성 | Supabase auth/storage 스텁을 둔 로컬 PostgreSQL 16에서 2회 연속 실행 | 오류 없음 |
+| RLS / `donate()` | 시청자 권한으로 남의 방송 update/delete, 포인트 직접 수정, 잔액 초과·본인 방송 후원 시도 | 모두 거부, 정상 후원은 차감/적립 |
+| 송출 UI | Playwright Chromium + 가짜 카메라/마이크/화면 공유 (PC, iPhone 에뮬레이션) | 화면(1920×1080)+탭 오디오+마이크 켜기/끄기, 모바일 화면 공유 버튼 숨김, 전/후면 전환, `playsInline` 확인 |
+| 녹화 | 가짜 장치로 5초 녹화 중 영상 트랙 끄기/교체 | 끊김 없이 1280×720 WebM 생성, 길이 메타데이터 정상 |
+| 시크릿 노출 | 클라이언트 번들(`.next/static`)에서 시크릿 변수명 검색 | 없음 |
+
+LiveKit 실서버를 통한 실제 송출·시청과 실기기(iOS/Android) 동작은 배포 환경에서 확인합니다.
+
+## 6. 로컬 실행 방법
 
 ```bash
 git clone https://github.com/ssem-i/g.git && cd g
@@ -118,7 +134,7 @@ npm run dev                  # http://localhost:3000
 DB는 Supabase SQL Editor에서 `supabase/schema.sql`을 한 번 실행하면 됩니다(재실행 안전). 전체 설정 순서는 [`TODO_USER.md`](./TODO_USER.md) 참고.
 환경 변수가 없어도 `npm run build`는 통과하며, 화면에는 "서비스 설정이 필요합니다" 안내가 표시됩니다.
 
-## 6. 아키텍처 요약
+## 7. 아키텍처 요약
 
 ```
 [스트리머 브라우저]                         [시청자 브라우저 (로그인 불필요)]

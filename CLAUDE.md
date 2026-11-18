@@ -38,7 +38,7 @@
 - [x] 송출: 서버 API가 세션 검증 후 소유자에게만 canPublish 토큰
 - [x] UI: 비소유자에게 수정/삭제/송출 버튼 숨김
 - [x] UI: 직접 URL 접근 차단 (수정/송출 페이지)
-- [ ] 완료 기준: 시청자 계정으로 남의 방송 수정/삭제/송출 시 UI·API 양쪽 거부
+- [x] 완료 기준: 시청자 계정으로 남의 방송 수정/삭제/송출 시 UI·API 양쪽 거부 (UI: Forbidden/버튼 숨김, API: 403, RLS는 로컬 Postgres에서 거부 확인. 배포본 확인 필요)
 
 ## 3.2 방송 CRUD
 - [x] 등록: 제목, 설명, 카테고리 (로그인 필요)
@@ -61,7 +61,7 @@
 - [x] 전면/후면 카메라 전환, 마이크 켜기/끄기
 - [x] 화면 공유 미지원 기기에서 화면 공유 버튼 숨김
 - [x] video 태그 playsInline, 사용자 터치(버튼) 후 카메라 시작 (송출 측). 시청 측 video도 playsInline, 소리는 터치 후 재생
-- [ ] (실기기) iOS Safari / Android Chrome 송출
+- [ ] (실기기) iOS Safari / Android Chrome 송출 — iPhone 에뮬레이션(가짜 카메라)으로 카메라 모드·전/후면 전환·playsInline 확인, 실기기 미검증
 
 ## 3.5 실시간 시청
 - [x] 로그인 없이 시청
@@ -94,9 +94,9 @@
 - [x] schema.sql 한 파일 (스키마, RLS, 함수, 버킷, 테스트 계정 시드), 재실행 안전 (로컬 Postgres 16에서 2회 연속 실행 검증)
 
 ## 6. 품질
-- [ ] 모든 페이지 모바일 반응형
-- [ ] 로딩/빈/오류 상태 (권한 거부, 카메라 없음, 네트워크 오류)
-- [ ] 한국어 오류 메시지 + 해결 방법
+- [x] 모든 페이지 모바일 반응형 (로그인·송출 화면은 Playwright iPhone 에뮬레이션으로 가로 넘침 없음 확인, 데이터 페이지는 Supabase 연결 후 확인 필요)
+- [x] 로딩/빈/오류 상태 (권한 거부, 카메라 없음, 네트워크 오류) — loading.tsx, error.tsx, EmptyState, mediaErrorMessage
+- [x] 한국어 오류 메시지 + 해결 방법 (`src/lib/errors.ts`)
 - [x] npm run build, 타입 검사 통과
 
 ## 7. README
@@ -119,4 +119,4 @@
 - [x] 8. 댓글
 - [x] 9. 도네이션
 - [x] 10. 녹화와 다시보기
-- [ ] 11. 전체 재검증, README 완성
+- [x] 11. 전체 재검증, README 완성 (독립 코드 리뷰 반영: 커밋 "fix: harden live flow from code review")
