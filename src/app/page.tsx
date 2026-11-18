@@ -2,8 +2,7 @@ import Link from "next/link";
 import { ConfigMissing } from "@/components/ConfigMissing";
 import { EmptyState, Notice } from "@/components/Notice";
 import { StreamGrid } from "@/components/StreamCard";
-import { isEffectivelyLive } from "@/lib/live";
-import { sortLiveFirst } from "@/lib/server/data";
+import { splitLive } from "@/lib/server/data";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { STREAM_SELECT, type StreamWithOwner } from "@/lib/types";
 
@@ -18,10 +17,7 @@ export default async function Home() {
     .limit(100)
     .returns<StreamWithOwner[]>();
 
-  const streams = sortLiveFirst(data ?? []);
-  const now = Date.now();
-  const live = streams.filter((s) => isEffectivelyLive(s, now));
-  const offline = streams.filter((s) => !isEffectivelyLive(s, now));
+  const { live, offline } = splitLive(data ?? []);
 
   return (
     <div className="space-y-10">

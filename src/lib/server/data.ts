@@ -29,3 +29,13 @@ export function sortLiveFirst(streams: StreamWithOwner[]): StreamWithOwner[] {
     return tb - ta;
   });
 }
+
+/** 실제 라이브 중인 방송과 나머지로 나눈다 */
+export function splitLive(streams: StreamWithOwner[]) {
+  const now = Date.now();
+  const sorted = sortLiveFirst(streams);
+  return {
+    live: sorted.filter((s) => isEffectivelyLive(s, now)),
+    offline: sorted.filter((s) => !isEffectivelyLive(s, now)),
+  };
+}
