@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ConfigMissing } from "@/components/ConfigMissing";
+import { DonateForm } from "@/components/donation/DonateForm";
 import { WatchRoom } from "@/components/viewer/WatchRoom";
 import type { ChatViewer } from "@/components/chat/ChatPanel";
 import { NotFoundCard } from "@/components/Forbidden";
@@ -26,9 +27,11 @@ export default async function StreamPage({ params }: PageProps<"/streams/[id]">)
 
   const [{ stream, error }, user] = await Promise.all([fetchStream(supabase, id), getCurrentUser(supabase)]);
   let viewer: ChatViewer | null = null;
+  let points: number | null = null;
   if (user) {
-    const { data } = await supabase.from("profiles").select("nickname").eq("id", user.id).maybeSingle();
+    const { data } = await supabase.from("profiles").select("nickname, points").eq("id", user.id).maybeSingle();
     viewer = { id: user.id, nickname: (data?.nickname as string | undefined) ?? user.email ?? "나" };
+    points = (data?.points as number | undefined) ?? null;
   }
   if (error)
     return (
@@ -55,6 +58,7 @@ export default async function StreamPage({ params }: PageProps<"/streams/[id]">)
         {stream.description && <p className="whitespace-pre-wrap text-sm text-foreground/90">{stream.description}</p>}
         {isOwner && <OwnerActions streamId={stream.id} live={live} />}
       </div>
+      <DonateForm streamId={stream.id} loggedIn={Boolean(user)} isOwner={isOwner} initialPoints={points} />
     </WatchRoom>
   );
 }

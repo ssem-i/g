@@ -10,6 +10,17 @@ import { STREAM_SELECT, type StreamWithOwner } from "@/lib/types";
 
 export const metadata = { title: "스튜디오 — LiveOn" };
 
+type One<T> = T | T[] | null;
+interface ReceivedDonation {
+  id: string;
+  amount: number;
+  message: string;
+  created_at: string;
+  stream: One<{ id: string; title: string; owner_id: string }>;
+  donor: One<{ nickname: string }>;
+}
+const one = <T,>(v: One<T>): T | null => (Array.isArray(v) ? (v[0] ?? null) : v);
+
 export default async function StudioPage() {
   const { supabase, user } = await requirePageUser("/studio");
   if (!supabase) return <ConfigMissing />;
@@ -21,6 +32,19 @@ export default async function StudioPage() {
     .order("created_at", { ascending: false })
     .returns<StreamWithOwner[]>();
   const streams = sortLiveFirst(data ?? []);
+
+  // 받은 후원 내역: 내 방송에 들어온 후원 (streams!inner 로 소유자 필터)
+  const { data: donations, error: donationError } = await supabase
+    .from("donations")
+    .select(
+      "id, amount, message, created_at, stream:streams!inner(id, title, owner_id), donor:profiles!donations_from_user_id_fkey(nickname)",
+    )
+    .eq("stream.owner_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(50)
+    .returns<ReceivedDonation[]>();
+  const donationTotal = (donations ?? []).reduce((sum, d) => sum + d.amount, 0);
+  const { data: me } = await supabase.from("profiles").select("points").eq("id", user.id).maybeSingle();
 
   return (
     <div className="space-y-8">
@@ -74,6 +98,53 @@ export default async function StudioPage() {
             );
           })}
         </ul>
+      </section>
+
+      <section>
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-lg font-bold">받은 후원</h2>
+          <p className="text-sm text-muted">
+            최근 50건 합계 <span className="font-bold text-yellow-300">{donationTotal.toLocaleString("ko-KR")}P</span>
+            {me && <> · 내 보유 포인트 {(me.points as number).toLocaleString("ko-KR")}P</>}
+          </p>
+        </div>
+        {donationError && (
+          <Notice tone="error" title="후원 내역을 불러오지 못했습니다">
+            새로고침해 주세요. ({donationError.message})
+          </Notice>
+        )}
+        {!donationError && (donations ?? []).length === 0 ? (
+          <EmptyState title="아직 받은 후원이 없습니다">시청자가 방송 페이지에서 후원하면 여기에 표시됩니다.</EmptyState>
+        ) : (
+          <div className="card overflow-x-auto">
+            <table className="w-full min-w-[520px] text-left text-sm">
+              <thead className="border-b border-border text-xs text-muted">
+                <tr>
+                  <th className="px-4 py-2 font-medium">일시</th>
+                  <th className="px-4 py-2 font-medium">후원자</th>
+                  <th className="px-4 py-2 font-medium">금액</th>
+                  <th className="px-4 py-2 font-medium">메시지</th>
+                  <th className="px-4 py-2 font-medium">방송</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(donations ?? []).map((d) => (
+                  <tr key={d.id} className="border-b border-border/60 last:border-0">
+                    <td className="whitespace-nowrap px-4 py-2 text-muted">{formatDate(d.created_at)}</td>
+                    <td className="px-4 py-2">{one(d.donor)?.nickname ?? "알 수 없음"}</td>
+                    <td className="whitespace-nowrap px-4 py-2 font-bold text-yellow-300">{d.amount.toLocaleString("ko-KR")}P</td>
+                    <td className="max-w-[16rem] break-words px-4 py-2">{d.message || <span className="text-muted">-</span>}</td>
+                    <td className="max-w-[12rem] truncate px-4 py-2">
+                      <Link href={`/streams/${one(d.stream)?.id}`} className="hover:text-accent">
+                        {one(d.stream)?.title}
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </div>
   );
