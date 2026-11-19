@@ -3,6 +3,8 @@
 > **서비스 주소: https://g-xi-orcin.vercel.app**
 >
 > GitHub: https://github.com/ssem-i/g
+>
+> **시연 영상: (링크 추가 예정)** — PC 송출(화면+탭 소리+마이크)·모바일 카메라 송출 → 다른 기기 시청 → 종료
 
 PC에서는 화면·탭 소리·마이크를, 모바일에서는 카메라·마이크를 브라우저만으로 송출하고,
 로그인 없이 어떤 기기에서든 실시간으로 시청하는 방송 웹 서비스입니다.
@@ -175,3 +177,22 @@ src/components/broadcast/      송출 (PC 화면 공유 / 모바일 카메라)
 src/components/viewer/         시청 플레이어
 src/lib/                       env, Supabase 클라이언트, 공통 유틸
 ```
+
+## 8. 사용한 오픈소스와 출처
+
+| 이름 | 용도 | 라이선스 |
+|---|---|---|
+| [Next.js](https://github.com/vercel/next.js), [React](https://github.com/facebook/react) | 웹 프레임워크 | MIT |
+| [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss) | 스타일 | MIT |
+| [livekit-client](https://github.com/livekit/client-sdk-js), [livekit-server-sdk](https://github.com/livekit/node-sdks) | WebRTC 송출/시청, 접속 토큰 발급 | Apache-2.0 |
+| [@supabase/supabase-js](https://github.com/supabase/supabase-js), [@supabase/ssr](https://github.com/supabase/ssr) | Auth, DB, Realtime, Storage | MIT |
+| [fix-webm-duration](https://github.com/yusitnikov/fix-webm-duration) | WebM 녹화 파일 길이 정보 보정 | MIT |
+
+- 인프라: LiveKit Cloud, Supabase, Vercel (무료 플랜)
+- AI 개발 도구: Claude Code로 설계·구현·검증을 진행했습니다.
+
+## 9. 선택 기능 범위 안내
+
+- **댓글**: 작성·조회·삭제(작성자 또는 방송 소유자, RLS로 서버 검증)를 구현했습니다. 댓글 수정은 구현하지 않았습니다.
+- **도네이션**: 외부 결제 서비스 대신 가입 시 지급되는 포인트로 후원합니다. `donate()` DB 함수가 로그인·잔액·금액·후원 대상을 서버에서 검증하고 한 트랜잭션으로 차감·적립·기록합니다(동시 요청에도 잔액이 음수가 되지 않음). 결제 승인 통지(웹훅)가 없는 구조라 승인 중복 처리는 해당되지 않습니다. 방송별 후원 내역과 합계는 스튜디오에서 확인합니다.
+- **녹화/다시보기**: 구현 (위 요구사항 표 참고).
