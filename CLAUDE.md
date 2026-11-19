@@ -83,7 +83,7 @@
 - [x] 스튜디오 후원 내역
 
 ## 4.3 녹화/다시보기 (선택)
-- [x] MediaRecorder로 송출 스트림 녹화 (Playwright 가짜 장치로 녹화·트랙 교체·WebM 길이 보정 검증)
+- [x] MediaRecorder로 송출 스트림 녹화 (Playwright 가짜 장치로 녹화·트랙 교체·WebM 길이 보정 검증). iPhone Safari 재생을 위해 MP4(H.264+AAC) 우선 녹화 + 조각 MP4 길이(mehd) 보정
 - [x] 종료 시 Storage 업로드 + recordings 기록
 - [x] 방송 상세/채널 페이지 다시보기 목록, 재생 페이지
 - [x] 소유자 다시보기 삭제

@@ -17,14 +17,71 @@ export interface RecordingResult {
 
 function pickMimeType(): string {
   if (typeof MediaRecorder === "undefined") return "";
+  // MP4(H.264+AAC)를 먼저 쓴다: iPhone Safari 는 Chrome 이 만든 VP9 WebM 을 1~2초 재생 후 멈추는 경우가 있다.
+  // MP4 녹화를 지원하지 않는 브라우저(구형 Chrome/Firefox)만 WebM 으로 녹화한다.
   const candidates = [
+    "video/mp4;codecs=avc1,mp4a.40.2",
+    "video/mp4",
     "video/webm;codecs=vp9,opus",
     "video/webm;codecs=vp8,opus",
     "video/webm",
-    "video/mp4;codecs=avc1,mp4a.40.2",
-    "video/mp4",
   ];
   return candidates.find((t) => MediaRecorder.isTypeSupported(t)) ?? "";
+}
+
+function readType(b: Uint8Array, off: number) {
+  return String.fromCharCode(b[off + 4], b[off + 5], b[off + 6], b[off + 7]);
+}
+
+/** off..end 범위에서 type 박스를 찾는다 (32비트 크기 박스만; MediaRecorder 출력은 이 형식) */
+function findBox(b: Uint8Array, dv: DataView, off: number, end: number, type: string): number {
+  while (off + 8 <= end) {
+    const size = dv.getUint32(off);
+    if (size < 8 || off + size > end) return -1;
+    if (readType(b, off) === type) return off;
+    off += size;
+  }
+  return -1;
+}
+
+/**
+ * MediaRecorder 의 조각(fragmented) MP4 는 전체 길이가 0으로 기록되어
+ * Safari 에서 길이 표시·탐색이 안 된다. mvhd 길이를 채우고 mvex 에 mehd(전체 길이) 박스를 넣는다.
+ * 조각의 데이터 위치는 moof 기준(default-base-is-moof)이라 moov 크기가 바뀌어도 안전하다.
+ */
+export function fixMp4Duration(input: ArrayBuffer, durationMs: number): ArrayBuffer | null {
+  const b = new Uint8Array(input);
+  const dv = new DataView(input);
+  const moov = findBox(b, dv, 0, b.length, "moov");
+  if (moov < 0) return null;
+  const moovEnd = moov + dv.getUint32(moov);
+  const mvhd = findBox(b, dv, moov + 8, moovEnd, "mvhd");
+  const mvex = findBox(b, dv, moov + 8, moovEnd, "mvex");
+  if (mvhd < 0 || mvex < 0) return null;
+  const mvexEnd = mvex + dv.getUint32(mvex);
+  if (findBox(b, dv, mvex + 8, mvexEnd, "mehd") >= 0) return null; // 이미 길이 정보가 있음
+
+  const v1 = b[mvhd + 8] === 1;
+  const timescale = dv.getUint32(mvhd + (v1 ? 28 : 20));
+  if (!timescale) return null;
+  const units = Math.round((durationMs * timescale) / 1000);
+  if (units <= 0 || units > 0xffffffff) return null;
+
+  const out = new Uint8Array(b.length + 16);
+  const insertAt = mvex + 8;
+  out.set(b.subarray(0, insertAt), 0);
+  out.set(b.subarray(insertAt), insertAt + 16);
+  const odv = new DataView(out.buffer);
+  // mehd (version 0): size, "mehd", version/flags, fragment_duration
+  odv.setUint32(insertAt, 16);
+  out.set([0x6d, 0x65, 0x68, 0x64], insertAt + 4);
+  odv.setUint32(insertAt + 8, 0);
+  odv.setUint32(insertAt + 12, units);
+  odv.setUint32(moov, dv.getUint32(moov) + 16);
+  odv.setUint32(mvex, dv.getUint32(mvex) + 16);
+  if (v1) odv.setBigUint64(mvhd + 32, BigInt(units));
+  else odv.setUint32(mvhd + 24, units);
+  return out.buffer;
 }
 
 export function isRecordingSupported(): boolean {
@@ -187,6 +244,13 @@ export class BroadcastRecorder {
       // MediaRecorder 의 webm 은 길이 정보가 없어 탐색이 안 되므로 보정
       try {
         blob = await fixWebmDuration(blob, durationMs, { logger: false });
+      } catch {
+        // 보정 실패해도 재생은 가능
+      }
+    } else {
+      try {
+        const fixed = fixMp4Duration(await blob.arrayBuffer(), durationMs);
+        if (fixed) blob = new Blob([fixed], { type: baseType });
       } catch {
         // 보정 실패해도 재생은 가능
       }

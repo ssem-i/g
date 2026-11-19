@@ -70,7 +70,7 @@ PC에서는 화면·탭 소리·마이크를, 모바일에서는 카메라·마�
 | 실시간 시청 | 로그인 없이 구독 전용 토큰으로 시청, 반응형 16:9 플레이어, 전체 화면(iPhone은 비디오 전체 화면), 음소거/해제와 볼륨, 자동 재생 차단 시 "눌러서 시청 시작" 오버레이, 현재 시청자 수, 꺼진 방송은 "방송 준비 중"(Realtime으로 상태 자동 반영) | `src/components/viewer/Viewer.tsx`, `src/app/streams/[id]/page.tsx` | 로그아웃 상태로 방송 상세 페이지 접속 |
 | (선택) 실시간 채팅 | 로그인 사용자만 작성(RLS `user_id = auth.uid()`), 누구나 열람, Supabase Realtime INSERT/DELETE 구독, DB 저장, 방송 소유자는 모든 채팅 삭제(RLS), 스트리머 배지 | `src/components/chat/ChatPanel.tsx`, `schema.sql` chat_messages 정책 | 두 창에서 같은 방송 열고 채팅 |
 | (선택) 도네이션 | 가입 시 10,000P(트리거), 금액·메시지 입력 후원, `donate()` DB 함수가 잔액 확인·차감·스트리머 적립·기록을 한 트랜잭션으로 처리(본인 방송 후원·잔액 부족 거부), Realtime으로 모든 시청자 플레이어 위 알림 + 채팅 강조, 스튜디오 받은 후원 표 | `src/components/donation/*`, `src/components/viewer/WatchRoom.tsx`, `src/app/studio/page.tsx`, `schema.sql` `donate()` | 시청자 계정으로 후원 → 다른 창 플레이어 위 알림 |
-| (선택) 녹화/다시보기 | 스트리머 브라우저에서 MediaRecorder로 녹화(캔버스 합성 영상 + AudioContext로 탭 오디오·마이크 믹스 → 송출 중 화면/카메라 전환에도 끊기지 않음), 방송 종료 시 Storage `recordings/{userId}/…` 업로드 + recordings 행 기록, WebM 길이 보정, 방송 상세·채널·스튜디오에 목록, 재생 페이지, 소유자 삭제(Storage 정책 + RLS) | `src/lib/recorder.ts`, `src/components/broadcast/BroadcastClient.tsx`, `src/components/recording/*`, `src/app/recordings/[id]/page.tsx` | 송출 → 방송 종료 → "다시보기 저장 완료 → 보기" |
+| (선택) 녹화/다시보기 | 스트리머 브라우저에서 MediaRecorder로 녹화(캔버스 합성 영상 + AudioContext로 탭 오디오·마이크 믹스 → 송출 중 화면/카메라 전환에도 끊기지 않음), 방송 종료 시 Storage `recordings/{userId}/…` 업로드 + recordings 행 기록, MP4(H.264+AAC) 우선 녹화로 iPhone Safari 재생 지원(미지원 브라우저는 WebM), MP4/WebM 길이 보정, 방송 상세·채널·스튜디오에 목록, 재생 페이지, 소유자 삭제(Storage 정책 + RLS) | `src/lib/recorder.ts`, `src/components/broadcast/BroadcastClient.tsx`, `src/components/recording/*`, `src/app/recordings/[id]/page.tsx` | 송출 → 방송 종료 → "다시보기 저장 완료 → 보기" |
 | 모바일 반응형 | 모든 페이지 Tailwind 반응형(목록 1→4열, 상세 플레이어/채팅 세로→가로 배치), 한국어 줄바꿈(`keep-all`) | `src/app/**`, `src/app/globals.css` | 휴대폰으로 각 페이지 접속 |
 | 로딩/빈/오류 상태 | 로딩 스켈레톤, 빈 목록 안내, 오류 경계(다시 시도), 카메라/마이크 권한 거부·장치 없음·사용 중, 네트워크/WebRTC 연결 실패, 환경 변수 누락 안내 | `src/app/loading.tsx`, `src/app/error.tsx`, `src/components/Notice.tsx`, `src/lib/errors.ts` | 카메라 권한 거부 후 "카메라" 버튼 |
 | 한국어 오류 + 해결 방법 | Supabase Auth/DB/미디어 오류를 원인과 해결 방법이 담긴 한국어 문장으로 변환 | `src/lib/errors.ts`, `schema.sql` `donate()` 메시지 | 잘못된 비밀번호로 로그인 |
@@ -105,6 +105,7 @@ PC에서는 화면·탭 소리·마이크를, 모바일에서는 카메라·마�
 | RLS / `donate()` | 시청자 권한으로 남의 방송 update/delete, 포인트 직접 수정, 잔액 초과·본인 방송 후원 시도 | 모두 거부, 정상 후원은 차감/적립 |
 | 송출 UI | Playwright Chromium + 가짜 카메라/마이크/화면 공유 (PC, iPhone 에뮬레이션) | 화면(1920×1080)+탭 오디오+마이크 켜기/끄기, 모바일 화면 공유 버튼 숨김, 전/후면 전환, `playsInline` 확인 |
 | 녹화 | 가짜 장치로 5초 녹화 중 영상 트랙 끄기/교체 | 끊김 없이 1280×720 WebM 생성, 길이 메타데이터 정상 |
+| 녹화 (MP4) | Chrome MP4(avc1+AAC) 녹화 5초 → mehd 길이 보정 | 길이 4.99초 표시, 2.5초 탐색, 끝까지 재생 (Chromium). iPhone Safari 실기기 재생은 배포 후 확인 |
 | 시크릿 노출 | 클라이언트 번들(`.next/static`)에서 시크릿 변수명 검색 | 없음 |
 
 LiveKit 실서버를 통한 실제 송출·시청과 실기기(iOS/Android) 동작은 배포 환경에서 확인합니다.

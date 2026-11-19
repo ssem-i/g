@@ -37,7 +37,7 @@ export default async function RecordingPage({ params }: PageProps<"/recordings/[
         이 브라우저는 영상 재생을 지원하지 않습니다.
       </video>
       <p className="text-xs text-muted">
-        재생되지 않으면 최신 Chrome/Edge/Firefox로 열어 주세요. (PC Chrome에서 녹화된 WebM 파일은 일부 구형 iOS Safari에서 재생되지 않을 수 있습니다.)
+        재생되지 않으면 최신 Chrome/Edge/Safari로 열어 주세요. (MP4 녹화를 지원하지 않는 브라우저에서 만든 WebM 다시보기는 iPhone Safari에서 재생되지 않을 수 있습니다.)
       </p>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
