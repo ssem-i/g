@@ -128,7 +128,7 @@ npm run dev                  # http://localhost:3000
 | `LIVEKIT_API_KEY` | LiveKit Cloud API Key | 서버 전용 (토큰 발급, 웹훅 검증) |
 | `LIVEKIT_API_SECRET` | LiveKit Cloud API Secret | **서버 전용** (`src/lib/server-env.ts`, `server-only`) |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API → Project URL | 서버·클라이언트 |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon public key | 서버·클라이언트 (RLS 적용) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon public key 또는 publishable key(`sb_publishable_…`). `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` 이름도 인식 | 서버·클라이언트 (RLS 적용) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service_role key | **서버 전용** (LiveKit 웹훅에서 offline 처리) |
 
 DB는 Supabase SQL Editor에서 `supabase/schema.sql`을 한 번 실행하면 됩니다(재실행 안전). 전체 설정 순서는 [`TODO_USER.md`](./TODO_USER.md) 참고.

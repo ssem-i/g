@@ -3,7 +3,9 @@
 
 export const publicEnv = {
   supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-  supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
+  // Supabase 신규 프로젝트는 anon key 대신 publishable key(sb_publishable_...)를 준다. 둘 다 허용.
+  supabaseAnonKey:
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "",
   livekitUrl: process.env.NEXT_PUBLIC_LIVEKIT_URL ?? "",
 };
 

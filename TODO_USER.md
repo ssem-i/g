@@ -16,8 +16,10 @@
    (예: `https://xxx.vercel.app`), Redirect URLs에도 같은 주소 추가
 5. [ ] **Project Settings → API**에서 아래 값 확인 (Vercel에 입력할 값)
    - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
-   - anon public key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - service_role key → `SUPABASE_SERVICE_ROLE_KEY` (절대 공개 금지)
+   - anon public key 또는 Publishable key(`sb_publishable_…`) → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+     (Vercel에 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` 이름으로 넣어도 인식합니다)
+   - service_role key 또는 Secret key(`sb_secret_…`) → `SUPABASE_SERVICE_ROLE_KEY` (절대 공개 금지)
+   - DB 비밀번호는 앱에서 쓰지 않습니다. 어디에도 넣지 마세요.
 6. [ ] (확인) **Database → Publications → supabase_realtime**에 `streams`, `chat_messages`, `donations`가 켜져 있는지 확인
    (schema.sql이 자동으로 추가합니다)
 7. [ ] (확인) **Storage**에 `recordings` 버킷(Public)이 생겼는지 확인
