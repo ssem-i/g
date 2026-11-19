@@ -1,6 +1,6 @@
 # LiveOn — 실시간 방송 플랫폼
 
-> **서비스 주소: (배포 후 기입 예정 — `https://<프로젝트>.vercel.app`)**
+> **서비스 주소: https://g-xi-orcin.vercel.app**
 >
 > GitHub: https://github.com/ssem-i/g
 

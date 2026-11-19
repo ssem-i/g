@@ -21,7 +21,7 @@
 - [x] Next.js App Router + TypeScript + Tailwind CSS
 - [x] LiveKit (livekit-client / livekit-server-sdk)
 - [x] Supabase Auth, Postgres, Realtime, Storage
-- [ ] Vercel 배포 (사용자 작업 — TODO_USER.md)
+- [x] Vercel 배포 — https://g-xi-orcin.vercel.app
 
 ## 2. 환경 변수
 - [x] 6개 변수 이름 기준으로 코드 작성 (`src/lib/env.ts`, `src/lib/server-env.ts`)
@@ -100,7 +100,7 @@
 - [x] npm run build, 타입 검사 통과
 
 ## 7. README
-- [ ] 서비스 주소 (맨 위) — 자리만 있음, 배포 후 실제 주소 기입 필요
+- [x] 서비스 주소 (맨 위) — https://g-xi-orcin.vercel.app
 - [x] 테스트 계정 2개 + 버튼 안내
 - [x] 단계별 확인 시나리오
 - [x] 요구사항 충족 표
