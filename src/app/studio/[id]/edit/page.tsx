@@ -5,7 +5,7 @@ import { StreamForm } from "@/components/StreamForm";
 import { requirePageUser } from "@/lib/server/auth";
 import { fetchStream } from "@/lib/server/data";
 
-export const metadata = { title: "방송 수정 — LiveOn" };
+export const metadata = { title: "방송 수정 — onde" };
 
 export default async function EditStreamPage({ params }: PageProps<"/studio/[id]/edit">) {
   const { id } = await params;

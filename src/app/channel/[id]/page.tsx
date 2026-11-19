@@ -8,7 +8,7 @@ import { getCurrentUser, getServerSupabase } from "@/lib/supabase/server";
 import { RECORDING_SELECT, RecordingList } from "@/components/recording/RecordingList";
 import { STREAM_SELECT, type Profile, type Recording, type StreamWithOwner } from "@/lib/types";
 
-export const metadata: Metadata = { title: "채널 — LiveOn" };
+export const metadata: Metadata = { title: "채널 — onde" };
 
 export default async function ChannelPage({ params }: PageProps<"/channel/[id]">) {
   const { id } = await params;

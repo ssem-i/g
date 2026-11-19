@@ -9,7 +9,7 @@ import { sortLiveFirst } from "@/lib/server/data";
 import { STREAM_SELECT, type Recording, type StreamWithOwner } from "@/lib/types";
 import { RECORDING_SELECT, RecordingList } from "@/components/recording/RecordingList";
 
-export const metadata = { title: "스튜디오 — LiveOn" };
+export const metadata = { title: "스튜디오 — onde" };
 
 type One<T> = T | T[] | null;
 interface ReceivedDonation {

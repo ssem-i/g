@@ -3,7 +3,7 @@ import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 
 export const metadata: Metadata = {
-  title: "LiveOn — 실시간 방송 플랫폼",
+  title: "onde — 실시간 방송 플랫폼",
   description: "PC 화면 공유와 모바일 카메라로 바로 방송하고, 어디서든 실시간으로 시청하세요.",
 };
 

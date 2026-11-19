@@ -1,4 +1,4 @@
-# LiveOn — 실시간 방송 플랫폼
+# onde — 실시간 방송 플랫폼
 
 > **서비스 주소: https://g-xi-orcin.vercel.app**
 >

@@ -4,7 +4,7 @@ import { Forbidden, NotFoundCard } from "@/components/Forbidden";
 import { requirePageUser } from "@/lib/server/auth";
 import { fetchStream } from "@/lib/server/data";
 
-export const metadata = { title: "송출 — LiveOn" };
+export const metadata = { title: "송출 — onde" };
 
 export default async function BroadcastPage({ params }: PageProps<"/studio/[id]/broadcast">) {
   const { id } = await params;

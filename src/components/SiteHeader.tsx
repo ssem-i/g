@@ -22,7 +22,7 @@ export async function SiteHeader() {
       <div className="mx-auto flex h-14 w-full max-w-7xl items-center gap-3 px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-1.5 text-lg font-extrabold tracking-tight">
           <span className="inline-block h-2.5 w-2.5 rounded-full bg-accent" aria-hidden />
-          LiveOn
+          onde
         </Link>
         <nav className="ml-auto flex items-center gap-2 text-sm">
           {user ? (

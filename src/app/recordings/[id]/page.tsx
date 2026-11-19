@@ -7,7 +7,7 @@ import { formatDate, formatDuration } from "@/lib/live";
 import { getCurrentUser, getServerSupabase } from "@/lib/supabase/server";
 import type { Recording } from "@/lib/types";
 
-export const metadata = { title: "다시보기 — LiveOn" };
+export const metadata = { title: "다시보기 — onde" };
 
 export default async function RecordingPage({ params }: PageProps<"/recordings/[id]">) {
   const { id } = await params;

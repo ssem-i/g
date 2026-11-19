@@ -2,7 +2,7 @@ import { ConfigMissing } from "@/components/ConfigMissing";
 import { StreamForm } from "@/components/StreamForm";
 import { requirePageUser } from "@/lib/server/auth";
 
-export const metadata = { title: "방송 만들기 — LiveOn" };
+export const metadata = { title: "방송 만들기 — onde" };
 
 export default async function NewStreamPage() {
   const { supabase } = await requirePageUser("/studio/new");

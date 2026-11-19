@@ -17,9 +17,9 @@ import { getCurrentUser, getServerSupabase } from "@/lib/supabase/server";
 export async function generateMetadata({ params }: PageProps<"/streams/[id]">): Promise<Metadata> {
   const { id } = await params;
   const supabase = await getServerSupabase();
-  if (!supabase) return { title: "LiveOn" };
+  if (!supabase) return { title: "onde" };
   const { stream } = await fetchStream(supabase, id);
-  return { title: stream ? `${stream.title} — LiveOn` : "방송 없음 — LiveOn" };
+  return { title: stream ? `${stream.title} — onde` : "방송 없음 — onde" };
 }
 
 export default async function StreamPage({ params }: PageProps<"/streams/[id]">) {
